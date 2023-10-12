@@ -1,8 +1,10 @@
-import { Project, Scene3D, PhysicsLoader, THREE } from 'enable3d';
+import { Project, Scene3D, PhysicsLoader, FLAT } from 'enable3d';
 
 class MainScene extends Scene3D {
+  pinkCore: any;
   box: any;
   cube: any;
+  sphere: any;
   constructor() {
     //@ts-ignore
     super('MainScene');
@@ -10,8 +12,6 @@ class MainScene extends Scene3D {
 
   init() {
     console.log('Init');
-    this.renderer.setPixelRatio(1);
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
   preload() {
@@ -32,6 +32,8 @@ class MainScene extends Scene3D {
       this.camera.updateProjectionMatrix();
     };
 
+    FLAT.init(this.renderer);
+
     window.onresize = resize;
     resize();
 
@@ -49,16 +51,35 @@ class MainScene extends Scene3D {
     this.physics.add.existing(this.box, { mass: 1, collisionFlags: 2 });
 
     // pink box
-    this.physics.add.box({ y: 5, x: 0 }, { lambert: { color: 'hotpink' } });
+    const pink = this.physics.add.box(
+      { y: 5, x: 0 },
+      { lambert: { color: 'hotpink', transparent: true, opacity: 0.8 } }
+    );
+    this.pinkCore = this.add.box(
+      { y: 0, x: 0, width: 0.8, height: 0.8, depth: 0.8 },
+      {
+        lambert: {
+          color: 'hotpink',
+          emissive: 'white',
+          emissiveIntensity: 0,
+        },
+      }
+    );
+
+    pink.add(this.pinkCore);
 
     // green sphere
-    const sphere = this.add.sphere(
+    this.sphere = this.add.sphere(
       { x: 0.2, y: 3, z: 0, radius: 0.8 },
-      { lambert: { color: 0x00ff00, transparent: true, opacity: 0.9 } }
+      {
+        lambert: {
+          color: 'yellowgreen',
+        },
+      }
     );
-    sphere.position.set(0.2, 6, 0);
-    this.physics.add.existing(sphere, { mass: 1, collisionFlags: 2 });
-    sphere.body.setFriction(0);
+    this.sphere.position.set(0.2, 6, 0);
+    this.physics.add.existing(this.sphere, { mass: 1, collisionFlags: 2 });
+    this.sphere.body.setFriction(0);
 
     const pos = [
       { y: 0, x: 1.01, z: 0 },
@@ -78,7 +99,15 @@ class MainScene extends Scene3D {
         x: 0,
         z: 0,
       },
-      { lambert: { color: 'seagreen', transparent: true, opacity: 0.9 } }
+      {
+        lambert: {
+          color: 'seagreen',
+          transparent: true,
+          opacity: 0.9,
+          emissive: 'white',
+          emissiveIntensity: 0.1,
+        },
+      }
     );
     pos.forEach((p) => {
       const childCube = this.add.box(
@@ -90,17 +119,29 @@ class MainScene extends Scene3D {
           x: p.x,
           z: p.z,
         },
-        { lambert: { color: 'seagreen', transparent: true, opacity: 0.9 } }
+        {
+          lambert: {
+            color: 'seagreen',
+            transparent: true,
+            opacity: 0.9,
+            emissive: 'white',
+            emissiveIntensity: 0.1,
+          },
+        }
       );
       this.cube.add(childCube);
     });
     this.physics.add.existing(this.cube);
   }
 
-  update() {
-    this.box.rotation.x += 0.01;
-    this.box.rotation.y += 0.01;
+  update(time: number) {
+    this.box.position.x = Math.sin(time);
+    this.box.rotation.x = Math.cos(time);
+    this.box.rotation.z = Math.abs(Math.sin(time));
     this.box.body.needUpdate = true;
+
+    this.pinkCore.material.emissiveIntensity = Math.abs(Math.sin(time));
+    this.pinkCore.material.needUpdate = true;
   }
 }
 
